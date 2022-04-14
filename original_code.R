@@ -4,29 +4,34 @@
 library(tidyverse)
 library(sf)
 library(osmdata)
+arcgisbinding::arc.check_product()
 
 
 # get data ----------------------------------------------------------------
 
 streets <- getbb("Santiago")%>%
-  opq() %>%
+  opq(timeout = 25 * 100) %>%
   add_osm_feature(key = "highway", 
                   value = c("motorway", "primary", 
-                            "secondary", "tertiary")) %>%
+                            "secondary")) %>%
   osmdata_sf()
 
 
 small_streets <- getbb("Santiago")%>%
-  opq() %>%
+  opq(timeout = 25 * 100) %>%
   add_osm_feature(key = "highway", 
                   value = c("residential", "living_street",
-                            "unclassified",
-                            "service", "footway")) %>%
+                            "tertiary")) %>%  #"footway", "service", "unclassified",
   osmdata_sf()
 
-river <- getbb("Santiago")%>%
-  opq() %>%
+waterway <- getbb("Santiago")%>%
+  opq(timeout = 25 * 100) %>%
   add_osm_feature(key = "waterway", value = "river") %>%
+  osmdata_sf()
+
+water <- getbb("Santiago")%>%
+  opq(timeout = 25 * 100) %>%
+  add_osm_feature(key = "natural", value = "water") %>%
   osmdata_sf()
 
 
@@ -61,3 +66,23 @@ ggplot() +
   theme(
     plot.background = element_rect(fill = "#282828")
   )
+
+
+ggsave("temp.tiff", dpi = 300)
+
+
+arcgisbinding::arc.write(here::here("output_data", "gis_mapping.gdb", "main_streets"),
+                         data = streets$osm_lines,
+                         overwrite = TRUE)
+
+arcgisbinding::arc.write(here::here("output_data", "gis_mapping.gdb", "small_streets"),
+                         data = small_streets$osm_lines,
+                         overwrite = TRUE)
+
+# arcgisbinding::arc.write(here::here("output_data", "gis_mapping.gdb", "rivers_polygons"),
+#                          data = water$osm_polygons,
+#                          overwrite = TRUE)
+
+arcgisbinding::arc.write(here::here("output_data", "gis_mapping.gdb", "rivers_polygons2"),
+                         data = water$osm_multipolygons,
+                         overwrite = TRUE)
